@@ -20,7 +20,7 @@ const messages = ref([])
 const sendMessage = async () => {
   if (!userInput.value.trim()) return
   messages.value.push({ role: 'Bạn', content: userInput.value })
-  const res = await fetch('http://localhost:8080/api/chat', {
+  const res = await fetch('https://backend-spring-production-d825.up.railway.app/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: userInput.value })
