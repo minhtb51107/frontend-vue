@@ -1,48 +1,71 @@
 <template>
-  <div class="chat-container">
-    <h2>Trợ lý AI Dạy Lập Trình</h2>
-    <div class="chat-box">
-      <div v-for="(msg, index) in messages" :key="index">
-        <p><b>{{ msg.role }}:</b> {{ msg.content }}</p>
-      </div>
-    </div>
-    <input v-model="userInput" @keyup.enter="sendMessage" placeholder="Hỏi lỗi code của bạn..." />
-    <button @click="sendMessage">Gửi</button>
+  <div id="app">
+    <!-- ✅ Chỉ hiện ChatApp nếu đã đăng nhập -->
+    <ChatApp
+      v-if="username"
+      :username="username"
+      @logout="handleLogout"
+    />
+
+    <!-- ✅ Nếu chưa đăng nhập, hiện trang đăng nhập -->
+    <router-view @login-success="handleLoginSuccess" />
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script>
+//import ChatApp from './components/ChatApp.vue'
+import ChatApp from './views/ChatApp.vue'
 
-const userInput = ref('')
-const messages = ref([])
-
-const sendMessage = async () => {
-  if (!userInput.value.trim()) return
-  messages.value.push({ role: 'Bạn', content: userInput.value })
-  const res = await fetch('https://backend-spring-production-d825.up.railway.app/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: userInput.value })
-  })
-  const data = await res.json()
-  messages.value.push({ role: 'AI', content: data.reply })
-  userInput.value = ''
+export default {
+  name: 'App',
+  components: {
+    ChatApp
+  },
+  data() {
+    return {
+      username: null
+    };
+  },
+  created() {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        this.username = payload.sub || payload.email || null;
+      } catch (e) {
+        this.username = null;
+      }
+    }
+  },
+  methods: {
+    handleLoginSuccess(username) {
+      this.username = username;
+    },
+    handleLogout() {
+      this.username = null;
+      localStorage.removeItem('token');
+      this.$router.push('/auth');
+    }
+  }
 }
 </script>
 
-<style scoped>
-.chat-container {
-  max-width: 600px;
-  margin: auto;
-  font-family: Arial, sans-serif;
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #343541;
+  font-family: 'Segoe UI', sans-serif;
 }
-.chat-box {
-  height: 400px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-  padding: 10px;
-  background: #f9f9f9;
+
+#app {
+  height: 100vh;
+  overflow: hidden;
 }
+
+.msg-content {
+  user-select: text !important;
+}
+
 </style>
