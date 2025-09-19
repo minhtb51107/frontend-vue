@@ -24,69 +24,78 @@ export function useChat(sessions, currentSessionId) {
     }
   }
 
-  // ✅ SỬA HÀM NÀY
-  async function sendMessage(file) { // Thêm 'file' làm tham số
+  // ✅ SỬA HÀM NÀY ĐỂ NHẬN `file`
+  async function sendMessage(file = null) { 
+    // Kiểm tra cả text và file
     if (!input.value.trim() && !file) return;
 
     const sessionId = currentSessionId.value;
-    if (!sessionId) return; // Không gửi nếu không có session
+    
+    // Logic tạo session đã được chuyển lên ChatApp.vue,
+    // nên ở đây ta có thể tin rằng sessionId đã tồn tại
+    if (!sessionId) {
+      console.error("Lỗi nghiêm trọng: sendMessage được gọi mà không có sessionId");
+      return; 
+    }
 
     const userMessageContent = input.value;
-    const userMessage = {
-      id: Date.now(),
-      content: userMessageContent + (file ? `\n[Đã đính kèm: ${file.name}]` : ''), // Thêm tên file vào tin nhắn UI
-      sender: 'user', // Sử dụng 'sender' thay vì 'role' cho nhất quán (hoặc 'role' tùy bạn)
-      timestamp: new Date().toISOString()
-    };
     
-    // Lấy session hiện tại và thêm tin nhắn UI ngay lập tức
+    // Thêm tin nhắn UI ngay lập tức
     const session = sessions.value.find(s => s.id === sessionId);
     if (session) {
+      // Hiển thị tên file trên UI nếu có
+      const displayContent = userMessageContent + (file ? `\n[Tệp đính kèm: ${file.name}]` : '');
       session.messages.push({
-        ...userMessage,
-        role: 'user' // Đảm bảo role được chuẩn hóa
-      });
+        id: Date.now(),
+        content: displayContent,
+        role: 'user',
+        timestamp: new Date().toISOString()
+      });
     }
 
     input.value = ''; // Xóa input
     isTyping.value = true;
 
     try {
-      // ✅ GỌI HÀM SERVICE MỚI VỚI 3 THAM SỐ
+      // ✅ GỌI HÀM SERVICE ĐÃ SỬA (với 3 tham số)
       const response = await chatService.sendMessage(sessionId, userMessageContent, file);
       
-      // Thêm phản hồi của AI (Giả sử backend trả về ChatMessageDTO)
-      // (Mã của bạn trả về string, mã mục tiêu trả về object. Tôi dùng mã mục tiêu)
-      // const reply = response.data?.content || response.data; // Lấy content từ object hoặc string
       if (session) {
-        // Chuẩn hóa phản hồi từ backend
-        const aiMessage = {
-          ...response.data, // Giả sử response.data là { id, content, sender, timestamp }
-          role: normalizeRole(response.data.role || response.data.sender)
-        };
+        // Backend trả về một String (nội dung AI)
+        // Chúng ta cần bọc nó trong một object tin nhắn
+        const aiMessage = {
+          id: response.data.id || Date.now() + 1, // Dùng ID từ backend nếu có, nếu không thì tự tạo
+          content: response.data.content || response.data, // Backend có thể trả về object hoặc string
+          role: 'assistant',
+          sender: 'assistant',
+          timestamp: response.data.timestamp || new Date().toISOString()
+        };
+        // Chuẩn hóa lại role
+        aiMessage.role = normalizeRole(aiMessage.role || aiMessage.sender);
+
         session.messages.push(aiMessage); 
       }
     } catch (error) {
       console.error('Lỗi gửi tin nhắn:', error);
       if (session) {
-        session.messages.push({
-          id: Date.now() + 1,
-          content: 'Xin lỗi, đã xảy ra lỗi khi gửi tin nhắn.',
-          role: 'assistant',
-          timestamp: new Date().toISOString()
-        });
+         session.messages.pop(); // Xóa tin nhắn lạc quan
+         input.value = userMessageContent; // Trả lại input
+         session.messages.push({
+           id: Date.now() + 1,
+           content: 'Lỗi: Không thể gửi tin nhắn.',
+           role: 'assistant',
+           timestamp: new Date().toISOString()
+         });
       }
     } finally {
       isTyping.value = false;
     }
   };
-  
-  // ❌ ĐÃ XÓA CÁC HÀM TRÙNG LẶP (generateTitle, createNewSession)
-  
-  return {
-    isTyping,
-    input,
-    loadMessages,
-    sendMessage
-  }
+  
+  return {
+    isTyping,
+    input,
+    loadMessages,
+    sendMessage // Export hàm đã sửa
+  }
 }

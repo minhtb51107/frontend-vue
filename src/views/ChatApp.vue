@@ -32,10 +32,10 @@
 
       <ChatInput
         v-model="input"
-        @send="sendMessage"
-      />
-    </main>
-  </div>
+        v-model:file="attachedFile" 
+        @send="handleSend"
+        :is-uploading="isUploading" />     </main>
+  </div>
 </template>
 
 <script setup>
@@ -55,19 +55,48 @@ defineEmits(['logout'])
 
 // Khởi tạo sessions
 const { sessions, currentSessionId, currentSession, loadSessions, createNewSession, renameSession, deleteSession } = useSession()
-
-// Khởi tạo chat
+// ✅ SỬA 2: Giữ nguyên tên gốc `sendMessage` từ useChat
 const { isTyping, input, loadMessages, sendMessage } = useChat(sessions, currentSessionId)
 
-// ✅ THÊM STATE MỚI CHO FILE
 const attachedFile = ref(null);
+const isUploading = ref(false);
 
-// ✅ TẠO HÀM HANDLESEND MỚI
+// ✅ SỬA 3: Đơn giản hóa hàm handleSend
 const handleSend = async () => {
-  // `sendMessage` bây giờ là từ useChat
-  await sendMessage(attachedFile.value); 
-  // Xóa file sau khi gửi thành công
-  attachedFile.value = null; 
+  if (isUploading.value) return; 
+
+  const file = attachedFile.value;
+  const text = input.value;
+  
+  if (!text.trim() && !file) {
+    return; 
+  }
+
+  isUploading.value = true;
+  // isTyping.value sẽ được xử lý bên trong useChat
+
+  try {
+    // BƯỚC 0: TẠO SESSION MỚI NẾU CHƯA CÓ (Logic này vẫn đúng)
+    if (!currentSessionId.value) {
+        const newSession = await createNewSession(); 
+        if (!newSession || !newSession.id) {
+            throw new Error("Không thể tạo session mới.");
+        }
+        // useSession đã tự động set currentSessionId.value, không cần gán lại
+    }
+
+    // BƯỚC 1: GỌI `sendMessage` TỪ `useChat`
+    // (Hàm này bây giờ đã nhận file)
+    await sendMessage(file); 
+    
+    // Xóa file khỏi input sau khi gửi thành công
+    attachedFile.value = null; 
+
+  } catch (error) {
+    console.error('Lỗi khi gửi (từ ChatApp):', error);
+  } finally {
+    isUploading.value = false;
+  }
 };
 
 // Các methods

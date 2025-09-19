@@ -27,23 +27,37 @@ export const chatService = {
     return apiClient.get(`/chat/sessions/${sessionId}/messages`)
   },
   
-  sendMessage(sessionId, content, file = null) {
-    // 1. Tạo FormData
+// ✅ HÀM MỚI: Chỉ để upload file, gọi đúng controller backend
+  uploadDocument(file) {
     const formData = new FormData();
-    formData.append('content', content);
+    formData.append('file', file);
     
-    // 2. Thêm file nếu nó tồn tại
-    if (file) {
-      formData.append('file', file);
-    }
-
-    // 3. Gửi dưới dạng multipart/form-data
-    // Axios sẽ tự động set Content-Type đúng khi bạn gửi FormData
-    return apiClient.post(`/chat/sessions/${sessionId}/messages`, formData, {
-       headers: {
-         // KHÔNG set 'Content-Type': 'multipart/form-data' ở đây!
-         // Hãy để Axios tự làm điều đó.
-       }
+    // Gọi đúng endpoint của DocumentIngestionController
+    return apiClient.post('/api/documents/upload', formData, {
+       // Để Axios tự xử lý headers 'multipart/form-data'
     });
   },
+
+  // ... (các hàm message khác) ...
+  
+// ✅ SỬA LẠI HÀM NÀY
+  // Nó phải nhận 3 tham số (id, content, file)
+  sendMessage(sessionId, content, file = null) {
+    // 1. Tạo FormData
+    const formData = new FormData();
+    formData.append('content', content);
+    
+    // 2. Thêm file nếu nó tồn tại
+    if (file) {
+      formData.append('file', file);
+    }
+
+    // 3. Gửi dưới dạng multipart/form-data
+    // Backend ChatMessageController đang chờ chính xác điều này
+    return apiClient.post(`/chat/sessions/${sessionId}/messages`, formData, {
+       headers: {
+         // Để Axios tự set Content-Type
+       }
+    });
+  },
 }
