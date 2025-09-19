@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'; // ✅ THÊM 'ref'
 import { useSession } from '@/composables/useSession'
 import { useChat } from '@/composables/useChat'
 import Sidebar from '@/components/Sidebar/Sidebar.vue'
@@ -58,6 +58,17 @@ const { sessions, currentSessionId, currentSession, loadSessions, createNewSessi
 
 // Khởi tạo chat
 const { isTyping, input, loadMessages, sendMessage } = useChat(sessions, currentSessionId)
+
+// ✅ THÊM STATE MỚI CHO FILE
+const attachedFile = ref(null);
+
+// ✅ TẠO HÀM HANDLESEND MỚI
+const handleSend = async () => {
+  // `sendMessage` bây giờ là từ useChat
+  await sendMessage(attachedFile.value); 
+  // Xóa file sau khi gửi thành công
+  attachedFile.value = null; 
+};
 
 // Các methods
 const newChat = () => {
