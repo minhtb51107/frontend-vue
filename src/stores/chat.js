@@ -81,4 +81,48 @@ export const useChatStore = defineStore("chat", {
       }
     },
   },
+   /**
+     * Thêm một tin nhắn mới vào cuối cuộc trò chuyện của session hiện tại.
+     * Dùng để thêm tin nhắn của người dùng và tin nhắn placeholder của AI.
+     * @param {object} message - Đối tượng tin nhắn (ví dụ: { id, content, role, timestamp })
+     */
+    addMessageToCurrentSession(message) {
+      const session = this.currentSession;
+      if (session) {
+        session.messages.push(message);
+      }
+    },
+
+    /**
+     * Tìm tin nhắn cuối cùng trong session hiện tại và nối thêm token vào nội dung.
+     * Đây là action cốt lõi để tạo hiệu ứng gõ chữ.
+     * @param {string} token - Mẩu văn bản (token) mới từ luồng stream.
+     */
+    appendTokenToLastMessage(token) {
+      const session = this.currentSession;
+      if (session && session.messages.length > 0) {
+        const lastMessage = session.messages[session.messages.length - 1];
+        // Chỉ nối vào tin nhắn của 'assistant'
+        if (lastMessage.role === 'assistant') {
+          lastMessage.content += token;
+        }
+      }
+    },
+
+    /**
+     * Cập nhật toàn bộ nội dung của một tin nhắn cụ thể trong session hiện tại.
+     * Dùng để hiển thị thông báo lỗi khi streaming thất bại.
+     * @param {number} messageId - ID của tin nhắn cần cập nhật.
+     * @param {string} newContent - Nội dung mới.
+     */
+    updateMessageContent(messageId, newContent) {
+      const session = this.currentSession;
+      if (session) {
+        const message = session.messages.find(m => m.id === messageId);
+        if (message) {
+          message.content = newContent;
+        }
+      }
+    }
+
 });
