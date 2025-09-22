@@ -26,71 +26,70 @@ export function useChat(sessions, currentSessionId) {
 
   // ✅ SỬA HÀM NÀY ĐỂ NHẬN `file`
   async function sendMessage(file = null) { 
-    // Kiểm tra cả text và file
-    if (!input.value.trim() && !file) return;
+    if (!input.value.trim() && !file) return;
 
-    const sessionId = currentSessionId.value;
-    
-    // Logic tạo session đã được chuyển lên ChatApp.vue,
-    // nên ở đây ta có thể tin rằng sessionId đã tồn tại
-    if (!sessionId) {
-      console.error("Lỗi nghiêm trọng: sendMessage được gọi mà không có sessionId");
-      return; 
-    }
+    const sessionId = currentSessionId.value;
+    
+    if (!sessionId) {
+      console.error("Lỗi nghiêm trọng: sendMessage được gọi mà không có sessionId");
+      return; 
+    }
 
-    const userMessageContent = input.value;
-    
-    // Thêm tin nhắn UI ngay lập tức
-    const session = sessions.value.find(s => s.id === sessionId);
-    if (session) {
-      // Hiển thị tên file trên UI nếu có
-      const displayContent = userMessageContent + (file ? `\n[Tệp đính kèm: ${file.name}]` : '');
-      session.messages.push({
-        id: Date.now(),
-        content: displayContent,
-        role: 'user',
-        timestamp: new Date().toISOString()
-      });
-    }
+    const userMessageContent = input.value;
+    const session = sessions.value.find(s => s.id === sessionId);
+    
+    if (session) {
+      const displayContent = userMessageContent + (file ? `\n[Tệp đính kèm: ${file.name}]` : '');
+      session.messages.push({
+        id: Date.now(),
+        content: displayContent,
+        role: 'user',
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    input.value = ''; // Xóa input
-    isTyping.value = true;
+    input.value = '';
+    isTyping.value = true;
 
-    try {
-      // ✅ GỌI HÀM SERVICE ĐÃ SỬA (với 3 tham số)
-      const response = await chatService.sendMessage(sessionId, userMessageContent, file);
-      
-      if (session) {
-        // Backend trả về một String (nội dung AI)
-        // Chúng ta cần bọc nó trong một object tin nhắn
-        const aiMessage = {
-          id: response.data.id || Date.now() + 1, // Dùng ID từ backend nếu có, nếu không thì tự tạo
-          content: response.data.content || response.data, // Backend có thể trả về object hoặc string
-          role: 'assistant',
+    try {
+      const response = await chatService.sendMessage(sessionId, userMessageContent, file);
+      
+      if (session) {
+        const aiMessage = {
+          id: response.data.id || Date.now() + 1,
+          content: response.data.content || response.data,
+          role: 'assistant',
           sender: 'assistant',
-          timestamp: response.data.timestamp || new Date().toISOString()
-        };
-        // Chuẩn hóa lại role
+          timestamp: response.data.timestamp || new Date().toISOString()
+        };
         aiMessage.role = normalizeRole(aiMessage.role || aiMessage.sender);
+        session.messages.push(aiMessage); 
+      }
 
-        session.messages.push(aiMessage); 
-      }
-    } catch (error) {
-      console.error('Lỗi gửi tin nhắn:', error);
-      if (session) {
-         session.messages.pop(); // Xóa tin nhắn lạc quan
-         input.value = userMessageContent; // Trả lại input
-         session.messages.push({
-           id: Date.now() + 1,
-           content: 'Lỗi: Không thể gửi tin nhắn.',
-           role: 'assistant',
-           timestamp: new Date().toISOString()
-         });
-      }
-    } finally {
-      isTyping.value = false;
-    }
-  };
+      // ✅ BỔ SUNG LOGIC GỌI TẠO TIÊU ĐỀ TẠI ĐÂY
+      // Nếu session hiện tại chưa có tiêu đề, gọi API để tạo
+      if (session && !session.title) {
+        console.log(`Session ${sessionId} chưa có tiêu đề, đang tạo...`);
+        const titleResponse = await chatService.generateTitle(sessionId);
+        session.title = titleResponse.data || "Chat không tên";
+      }
+
+    } catch (error) {
+      console.error('Lỗi gửi tin nhắn:', error);
+      if (session) {
+         session.messages.pop(); // Xóa tin nhắn lạc quan
+         input.value = userMessageContent; // Trả lại input
+         session.messages.push({
+           id: Date.now() + 1,
+           content: 'Lỗi: Không thể gửi tin nhắn.',
+           role: 'assistant',
+           timestamp: new Date().toISOString()
+         });
+      }
+    } finally {
+      isTyping.value = false;
+    }
+  };
   
   return {
     isTyping,

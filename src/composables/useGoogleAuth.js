@@ -36,12 +36,12 @@ export function useGoogleAuth() {
     })
   }
 
-  async function handleGoogleLogin(idToken) {
+async function handleGoogleLogin(idToken) {
     try {
         const response = await authService.loginWithGoogle(idToken)
-        // SỬA: response.data là object, không phải string
         localStorage.setItem('token', response.data.token)
-        return response.data
+        // SỬA LẠI DÒNG NÀY:
+        return response.data.token // <<< PHẢI TRẢ VỀ CHUỖI TOKEN, KHÔNG PHẢI OBJECT
     } catch (error) {
         throw new Error(error.response?.data || 'Đăng nhập Google thất bại!')
     }
