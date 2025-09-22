@@ -1,85 +1,73 @@
 <template>
   <section class="chat-window" ref="chatWindow">
-<ChatMessage
-  v-for="(msg, index) in messages"
-  :key="index"
-  :message="msg"
-  :index="index"
-  :isTyping="isTyping && index === normalizedMessages.length - 1 && msg.role === 'assistant'" 
-  @copy="$emit('copy-message', $event)"
-  @edit="$emit('edit-message', index, $event)"
-/>
+    <ChatMessage
+      v-for="(msg, index) in messages"
+      :key="msg.id || index"
+      :message="msg"
+    />
 
-<!-- Thêm đoạn dưới đây -->
-<!-- <div v-if="messages.length === 0 && !isTyping" class="empty-state">
-  🗨️ Bắt đầu cuộc trò chuyện mới...
-</div> -->
-
-<TypingIndicator v-if="isTyping" />
-
+    <div v-if="isTyping" class="typing-indicator-wrapper">
+      <TypingIndicator />
+    </div>
   </section>
 </template>
 
-<script>
-import ChatMessage from './ChatMessage.vue'
-import TypingIndicator from './TypingIndicator.vue'
+<script setup>
+// Chuyển sang <script setup> cho đồng bộ
+import { ref, watch, nextTick } from 'vue';
+import ChatMessage from './ChatMessage.vue';
+import TypingIndicator from './TypingIndicator.vue';
 
-export default {
-  components: {
-    ChatMessage,
-    TypingIndicator
-  },
-  props: {
-    messages: Array,
-    isTyping: Boolean
-  },
-  computed: {
-  normalizedMessages() {
-    return this.messages.map(msg => ({
-      ...msg,
-      role: msg.role?.toLowerCase?.() === 'ai' ? 'assistant' : msg.role?.toLowerCase?.()
-    }))
+const props = defineProps({
+  messages: Array,
+  isTyping: Boolean
+});
+
+const chatWindow = ref(null);
+
+const scrollToBottom = () => {
+  if (chatWindow.value) {
+    chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
   }
-},
-  watch: {
-    messages: {
-      handler() {
-        this.$nextTick(this.scrollToBottom)
-      },
-      deep: true
-    },
-    isTyping(newVal) {
-      if (newVal) {
-        this.$nextTick(this.scrollToBottom)
-      }
-    }
-  },
-  methods: {
-    scrollToBottom() {
-      const el = this.$refs.chatWindow
-      if (el) {
-        el.scrollTop = el.scrollHeight
-      }
-    }
+};
+
+watch(() => props.messages, () => {
+  nextTick(scrollToBottom);
+}, { deep: true });
+
+watch(() => props.isTyping, (newVal) => {
+  if (newVal) {
+    nextTick(scrollToBottom);
   }
-}
+});
 </script>
 
 <style scoped>
 .chat-window {
-  flex: 1;
-  overflow-y: auto;
-  padding: 32px 0;
+  flex: 1; /* Quan trọng: Chiếm toàn bộ không gian còn lại */
+  overflow-y: auto; /* Quan trọng: Cho phép cuộn bên trong */
+  padding: 24px 0; /* Tạo khoảng đệm trên và dưới */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.empty-state {
-  margin-top: 100px;
-  font-size: 1.1rem;
-  color: #999;
-  font-style: italic;
-  text-align: center;
+
+/* Custom scrollbar cho chuyên nghiệp hơn */
+.chat-window::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-window::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-window::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
 }
 
+.typing-indicator-wrapper {
+  width: 100%;
+  max-width: 820px;
+  padding: 0 20px;
+  margin-top: 1rem;
+}
 </style>

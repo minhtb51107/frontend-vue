@@ -116,7 +116,7 @@ li {
   align-items: center;
   padding: 7px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #2e2e2e;
+  /* border-bottom: 1px solid #2e2e2e; */
   border-radius: 10px;
   margin: 6px;
   transition: background 0.2s;

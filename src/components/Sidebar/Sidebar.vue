@@ -1,17 +1,20 @@
 <template>
-  <aside class="sidebar" v-show="showSidebar">
-    <header class="sidebar-header">
-      <h1>Thêm mới</h1>
-      <button @click="$emit('new-chat')">＋</button>
-    </header>
-    
-    <SessionList
-      :sessions="sessions"
-      :currentSessionId="currentSessionId"
-      @switch-chat="$emit('switch-chat', $event)"
-      @rename-session="$emit('rename-session', $event)"
-      @delete-session="$emit('delete-session', $event)"
-    />
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <button class="new-chat-btn" @click="$emit('new-chat')">
+        <span>＋</span> Mới
+      </button>
+    </div>
+
+    <div class="session-list-wrapper">
+      <SessionList
+        :sessions="sessions"
+        :currentSessionId="currentSessionId"
+        @switch-chat="$emit('switch-chat', $event)"
+        @rename-session="$emit('rename-session', $event)"
+        @delete-session="$emit('delete-session', $event)"
+      />
+    </div>
 
     <div class="uploader-wrapper">
       <KnowledgeUploader />
@@ -19,70 +22,79 @@
   </aside>
 </template>
 
-<script>
-import SessionList from './SessionList.vue'
-import KnowledgeUploader from './KnowledgeUploader.vue'; // ✅ THÊM MỚI
+<script setup>
+import SessionList from './SessionList.vue';
+import KnowledgeUploader from './KnowledgeUploader.vue';
 
-export default {
-  components: {
-    SessionList,
-    KnowledgeUploader 
-  },
-  props: {
-    sessions: Array,
-    currentSessionId: [String, Number], // 👈 Chuyển sang ID
-    showSidebar: {
-      type: Boolean,
-      default: true
-    },
-    showNewChatByDefault: {
-    type: Boolean,
-    default: true
-  }
-  }
-}
+defineProps({
+  sessions: Array,
+  currentSessionId: [String, Number],
+});
+
+defineEmits(['new-chat', 'switch-chat', 'rename-session', 'delete-session']);
 </script>
 
 <style scoped>
 .sidebar {
-  width: 250px;
-  background: #171717;
-  border-right: 1px solid #2d2d2f;
+  width: 260px;
+  background: #111111;
+  border-right: 1px solid #333;
   display: flex;
   flex-direction: column;
-   height: 100vh; 
+  height: 100vh;
 }
 
 .sidebar-header {
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #171717;
-  border-bottom: 1px solid #2e2e2e;
+  padding: 12px;
+  flex-shrink: 0;
 }
 
-/* ✅ THÊM 5: Style cho các wrapper mới */
+.new-chat-btn {
+  width: 100%;
+  padding: 5px;
+  background-color: transparent;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.new-chat-btn:hover {
+  background-color: #2a2a2a;
+  border-color: #555;
+}
+
+.new-chat-btn span {
+  font-size: 1.2rem;
+}
+
 .session-list-wrapper {
-  flex: 1; /* Cho phép danh sách session chiếm đầy không gian */
-  overflow-y: auto; /* Thêm thanh cuộn nếu danh sách quá dài */
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp hơn */
+.session-list-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.session-list-wrapper::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+.session-list-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .uploader-wrapper {
-  flex-shrink: 0; /* Không co lại, luôn ở dưới cùng */
-  /* Border-top đã có trong style của KnowledgeUploader.vue */
-}
-
-.sidebar-header h1 {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.sidebar-header button {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 1.2rem;
-  cursor: pointer;
+  flex-shrink: 0;
+  height: auto; /* Để chiều cao tự động theo nội dung */
 }
 </style>

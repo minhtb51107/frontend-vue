@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --background-primary: #1a1a1a;
+  --background-secondary: #2d2d2d;
+  --background-tertiary: #404040;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --accent-primary: #4f46e5;
+  --accent-secondary: #6366f1;
+  --border-primary: #404040;
+}
+
+html, body {
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Cải thiện thanh cuộn */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--background-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
