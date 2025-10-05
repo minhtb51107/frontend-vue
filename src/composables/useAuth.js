@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import { authService } from '@/services/authService'
+// import { authService } from '@/services/authService' // Không cần service riêng nữa
+import { useStore } from 'vuex' // ✅ 1. Import useStore
 import { useRouter } from 'vue-router'
 
 export function useAuth() {
@@ -7,17 +8,22 @@ export function useAuth() {
   const success = ref(false)
   const isLoading = ref(false)
   const router = useRouter()
+  const store = useStore() // ✅ 2. Lấy store instance
 
   async function login(credentials) {
     isLoading.value = true
     try {
-      const response = await authService.login(credentials)
-      localStorage.setItem('token', response.data)
+      // ✅ 3. Dispatch action 'auth/login' từ store
+      await store.dispatch('auth/login', credentials)
+      
       message.value = 'Đăng nhập thành công!'
       success.value = true
-      return response.data
+      
+      // Chuyển hướng sau khi đăng nhập thành công
+      router.push({ name: 'ChatApp' }); // Thay 'ChatApp' bằng tên route của bạn
+      
     } catch (error) {
-      message.value = error.response?.data || 'Đăng nhập thất bại!'
+      message.value = error.response?.data?.message || 'Đăng nhập thất bại!'
       success.value = false
       throw error
     } finally {
@@ -25,15 +31,15 @@ export function useAuth() {
     }
   }
 
+  // Các hàm register, sendVerificationCode cũng nên được sửa tương tự để dispatch action của store
   async function register(userData) {
     isLoading.value = true
     try {
-      const response = await authService.register(userData)
-      message.value = response.data
+      await store.dispatch('auth/register', userData)
+      message.value = 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực.'
       success.value = true
-      return response.data
     } catch (error) {
-      message.value = error.response?.data || 'Đăng ký thất bại!'
+      message.value = error.response?.data?.message || 'Đăng ký thất bại!'
       success.value = false
       throw error
     } finally {
